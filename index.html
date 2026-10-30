@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SSQ Lab">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="双色球开奖历史查询、冷热与遗漏统计、规则过滤、机选与买号对奖。纯静态，全部在浏览器里计算。">
+<title>双色球选号 · SSQ Lab</title>
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<script src="assets/boot.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<link rel="preload" href="data/draws.json" as="fetch" crossorigin>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主内容</a>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="导航">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+        <g class="mark-back" transform="translate(6 6)"><circle cx="16" cy="16" r="12"/><rect x="30" y="4" width="16" height="44" rx="8"/></g>
+        <g class="mark-front" transform="translate(2 2)"><circle cx="16" cy="16" r="12"/><rect x="30" y="4" width="16" height="44" rx="8"/></g>
+      </svg>
+      <span class="wordmark">SSQ Lab</span>
+      <span class="brand-sub">双色球选号</span>
+    </div>
+    <nav class="nav" role="tablist" aria-label="功能">
+      <button class="nav-item" role="tab" data-tab="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg><span class="nav-label">历史查询</span></button>
+      <button class="nav-item" role="tab" data-tab="stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg><span class="nav-label">冷热与遗漏</span></button>
+      <button class="nav-item" role="tab" data-tab="filter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg><span class="nav-label">规则过滤</span></button>
+      <button class="nav-item" role="tab" data-tab="pick"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/><circle cx="12" cy="12" r="1.2"/></svg><span class="nav-label">机选</span></button>
+      <button class="nav-item" role="tab" data-tab="picks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6"/><path d="M9 12h6"/></svg><span class="nav-label">买号与对奖</span><span class="nav-count" id="nav-picks-count"></span></button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="seg" role="radiogroup" aria-label="主题" id="theme-seg">
+        <button type="button" role="radio" data-theme-pref="light">亮</button>
+        <button type="button" role="radio" data-theme-pref="dark">暗</button>
+        <button type="button" role="radio" data-theme-pref="system">系统</button>
+      </div>
+      <p class="foot-note">数据来源：中国福利彩票官网开奖公告。纯静态页面，所有计算在本机浏览器完成，买号记录只存在本浏览器。</p>
+    </div>
+  </aside>
+
+  <main id="main" class="main" tabindex="-1">
+    <header class="topbar">
+      <svg class="mark topbar-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <g class="mark-back" transform="translate(6 6)"><circle cx="16" cy="16" r="12"/><rect x="30" y="4" width="16" height="44" rx="8"/></g>
+        <g class="mark-front" transform="translate(2 2)"><circle cx="16" cy="16" r="12"/><rect x="30" y="4" width="16" height="44" rx="8"/></g>
+      </svg>
+      <h1 id="page-title">历史查询</h1>
+      <div class="topbar-right">
+        <span class="pill" id="data-pill" data-status="queued">加载中…</span>
+        <button class="btn btn-icon theme-btn" id="theme-btn" type="button" aria-label="切换主题" title="切换主题">
+          <svg class="i-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="i-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+          <svg class="i-system" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16a8 8 0 0 0 0-16z" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="content">
+      <div class="callout" role="note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
+        <p><strong>每期开奖独立随机，统计与过滤不提高中奖概率。</strong>本工具仅用于查询、记录与娱乐，请理性购彩、量力而行。</p>
+      </div>
+
+      <!-- 1 历史查询 -->
+      <section class="view" id="view-history" role="tabpanel" hidden>
+        <div class="latest-mobile" id="latest-mobile"></div>
+        <form class="toolbar card" id="history-form" autocomplete="off">
+          <label class="field"><span>期号</span><input name="code" placeholder="如 2026124 或 2026" inputmode="numeric"></label>
+          <label class="field field-narrow"><span>蓝球</span><input name="blue" placeholder="如 9" inputmode="numeric"></label>
+          <label class="field"><span>开始日期</span><input type="date" name="from"></label>
+          <label class="field"><span>结束日期</span><input type="date" name="to"></label>
+          <label class="field field-wide"><span>包含红球</span><input name="reds" placeholder="空格分隔，如 3 11 17"></label>
+          <div class="toolbar-actions">
+            <button class="btn btn-primary" type="submit">查询</button>
+            <button class="btn btn-ghost" type="reset">清除</button>
+          </div>
+        </form>
+        <div class="card table-card">
+          <div class="table-head"><h2>开奖记录</h2><span class="muted" id="history-total"></span></div>
+          <div class="table-wrap"><table class="table cards" id="history-table">
+            <thead><tr><th>期号</th><th>开奖日期</th><th>开奖号码</th><th class="num">和值</th><th class="num">销售额（元）</th><th class="num">奖池（元）</th><th class="num">一等奖</th><th class="num">一等单注（元）</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+          <div class="pager" id="history-pager"></div>
+        </div>
+      </section>
+
+      <!-- 2 冷热与遗漏 -->
+      <section class="view" id="view-stats" role="tabpanel" hidden>
+        <div class="row-between">
+          <div class="seg seg-fill" role="radiogroup" aria-label="统计范围" id="stats-seg">
+            <button type="button" role="radio" data-n="30">近 30 期</button>
+            <button type="button" role="radio" data-n="50">近 50 期</button>
+            <button type="button" role="radio" data-n="100">近 100 期</button>
+            <button type="button" role="radio" data-n="all">全部</button>
+          </div>
+          <span class="muted small" id="stats-range"></span>
+        </div>
+        <div class="chips-row" id="stats-chips"></div>
+        <div class="card chart-card"><div class="chart-head"><div class="rule-title"><h2>红球出现次数</h2><button type="button" class="help-btn" data-help="stats-hot" aria-expanded="false" aria-controls="help-stats-hot">冷热号说明</button></div><span class="legend"><i class="sw sw-red"></i>出现次数 <i class="sw sw-line"></i>理论期望</span></div><div class="explain" id="help-stats-hot" hidden></div><div class="chart" id="chart-red-count" data-label="红球出现次数"></div></div>
+        <div class="card chart-card"><div class="chart-head"><div class="rule-title"><h2>红球遗漏</h2><button type="button" class="help-btn" data-help="stats-miss" aria-expanded="false" aria-controls="help-stats-miss">遗漏说明</button></div><span class="legend"><i class="sw sw-accent"></i>当前遗漏 <i class="sw sw-tick"></i>范围内最大遗漏</span></div><div class="explain" id="help-stats-miss" hidden></div><div class="chart" id="chart-red-miss" data-label="红球遗漏"></div></div>
+        <div class="grid-2">
+          <div class="card chart-card"><div class="chart-head"><h2>蓝球出现次数</h2><span class="legend"><i class="sw sw-blue"></i>出现次数 <i class="sw sw-line"></i>理论期望</span></div><div class="chart" id="chart-blue-count" data-label="蓝球出现次数"></div></div>
+          <div class="card chart-card"><div class="chart-head"><h2>蓝球遗漏</h2><span class="legend"><i class="sw sw-accent"></i>当前 <i class="sw sw-tick"></i>最大</span></div><div class="chart" id="chart-blue-miss" data-label="蓝球遗漏"></div></div>
+        </div>
+        <p class="muted small">出现次数与最大遗漏按所选范围统计；当前遗漏按全部历史计算（距最近一次开出的期数）。</p>
+      </section>
+
+      <!-- 3 规则过滤 -->
+      <section class="view" id="view-filter" role="tabpanel" hidden>
+        <div class="filter-layout">
+          <div class="filter-rules" id="filter-rules"></div>
+          <aside class="card result-card" id="filter-result" aria-live="polite"></aside>
+        </div>
+        <div class="filter-bar" id="filter-bar" aria-hidden="true"></div>
+      </section>
+
+      <!-- 4 机选 -->
+      <section class="view" id="view-pick" role="tabpanel" hidden>
+        <div class="card">
+          <div class="row-between"><div class="rule-title"><h2>当前规则</h2><button type="button" class="help-btn" data-help="pick" aria-expanded="false" aria-controls="help-pick">机选说明</button></div><button class="btn btn-ghost" type="button" data-goto="filter">编辑规则</button></div>
+          <div class="explain" id="help-pick" hidden></div>
+          <div class="chips-row" id="pick-rules"></div>
+        </div>
+        <form class="toolbar card" id="pick-form">
+          <label class="field field-narrow"><span>注数</span><input name="n" type="number" min="1" max="100" value="5" inputmode="numeric"></label>
+          <label class="field"><span>目标期号</span><input name="target" inputmode="numeric"></label>
+          <div class="toolbar-actions">
+            <button class="btn btn-primary" type="submit">生成</button>
+            <button class="btn btn-secondary" type="button" id="pick-save" disabled>全部存入买号记录</button>
+          </div>
+        </form>
+        <div class="card" id="pick-list"></div>
+      </section>
+
+      <!-- 5 买号记录 -->
+      <section class="view" id="view-picks" role="tabpanel" hidden>
+        <div class="summary" id="picks-summary"></div>
+        <details class="card entry" id="entry" open>
+          <summary><h2>录入买号</h2></summary>
+          <div class="entry-body">
+            <div class="help-row"><button type="button" class="help-btn" data-help="plays" aria-expanded="false" aria-controls="help-plays">单式 / 复式 / 胆拖怎么算注数</button></div>
+            <div class="explain" id="help-plays" hidden></div>
+            <div class="seg seg-fill" role="radiogroup" aria-label="玩法" id="play-seg">
+              <button type="button" role="radio" data-play="single">单式</button>
+              <button type="button" role="radio" data-play="multiple">复式</button>
+              <button type="button" role="radio" data-play="dantuo">胆拖</button>
+            </div>
+            <div class="entry-row">
+              <label class="field field-inline"><span>目标期号</span><input id="entry-target" inputmode="numeric"></label>
+              <label class="field field-inline field-mult"><span>倍数</span><input id="entry-mult" type="number" min="1" max="99" value="1" inputmode="numeric"></label>
+              <label class="field field-inline field-wide"><span>备注</span><input id="entry-note" maxlength="200" placeholder="可选"></label>
+            </div>
+            <p class="muted small" id="entry-hint"></p>
+            <div class="seg seg-fill" role="radiogroup" aria-label="选号对象" id="dt-seg" hidden>
+              <button type="button" role="radio" data-dt="dan">选胆码</button><button type="button" role="radio" data-dt="tuo">选拖码</button>
+            </div>
+            <div class="ball-grid" id="entry-reds" aria-label="红球"></div>
+            <div class="ball-grid" id="entry-blues" aria-label="蓝球"></div>
+            <div class="row-between entry-foot">
+              <span id="entry-calc" class="calc"></span>
+              <div class="toolbar-actions"><button class="btn btn-ghost" type="button" id="entry-clear">清空</button><button class="btn btn-primary" type="button" id="entry-save">保存记录</button></div>
+            </div>
+          </div>
+        </details>
+        <div class="card table-card">
+          <div class="table-head">
+            <div class="rule-title"><h2>买号记录</h2><button type="button" class="help-btn" data-help="prize" aria-expanded="false" aria-controls="help-prize">奖级说明</button></div>
+            <div class="toolbar-actions">
+              <button class="btn btn-secondary" type="button" id="picks-export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>导出</button>
+              <button class="btn btn-secondary" type="button" id="picks-import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>导入</button>
+              <input type="file" id="picks-file" accept="application/json,.json" hidden>
+            </div>
+          </div>
+          <div class="explain explain-in-table" id="help-prize" hidden></div>
+          <p class="table-note small">记录只保存在本浏览器（localStorage），换设备或清除网站数据前请先导出 JSON。开奖数据更新后自动对奖；三至六等奖 3000/200/10/5 元，一二等奖取该期公告奖金。</p>
+          <div class="table-wrap"><table class="table cards" id="picks-table">
+            <thead><tr><th>目标期号 · 玩法</th><th>号码</th><th class="num">注数 · 投入</th><th>状态</th><th>中奖明细</th><th class="num">奖金</th><th><span class="sr-only">操作</span></th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <aside class="panel" aria-label="最新开奖">
+    <header class="panel-head"><h2>最新开奖</h2></header>
+    <div class="panel-body" id="panel"></div>
+  </aside>
+</div>
+
+<dialog id="confirm" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-body"></p>
+    <div class="dialog-actions" id="confirm-actions"></div>
+  </form>
+</dialog>
+<div class="toasts" id="toasts"></div>
+<script src="assets/core.js"></script>
+<script src="assets/help.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

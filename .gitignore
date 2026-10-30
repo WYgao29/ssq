@@ -1,0 +1,8 @@
+# 自测截图与测试脚本只在本地用，不进仓库
+screenshots/
+tests/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+*.tmp
